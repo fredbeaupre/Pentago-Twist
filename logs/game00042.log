@@ -3,26 +3,24 @@
 # Board class: pentago_twist.PentagoBoard
 # Timeout: 20000
 # First Move Timeout: 30000
-# Date: Mon Apr 12 16:37:41 EDT 2021
+# Date: Mon Apr 12 17:28:24 EDT 2021
 # Player 1: Player-0, 'AlphaBeta', running on localhost
 # Player 2: Player-1, 'RandomPlayer', running on localhost
 START Player-0 AlphaBeta
 START Player-1 RandomPlayer
-1 1 2 1 0
-0 3 2 1 1
-1 4 3 1 0
-0 2 1 0 1
-1 2 2 1 0
-5 5 2 0 1
-1 5 2 1 0
-5 4 1 0 1
-1 0 0 1 0
-5 0 2 0 1
-4 1 2 0 0
-4 2 0 0 1
-5 2 0 0 0
-0 3 2 1 1
-5 3 2 1 0
-2 0 1 0 1
+4 4 2 0 0
+4 3 3 1 1
+1 1 2 0 0
+1 0 1 0 1
+1 2 3 0 0
+1 5 2 0 1
+5 5 1 1 0
+3 3 1 0 1
+0 2 2 1 0
+4 1 2 0 1
+2 0 1 0 0
+5 2 2 0 1
+5 3 3 0 0
+5 1 0 0 1
 GAMEOVER WINNER 0
-# Game ended: Mon Apr 12 16:37:46 EDT 2021
+# Game ended: Mon Apr 12 17:28:33 EDT 2021

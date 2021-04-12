@@ -32,14 +32,14 @@ public class StudentPlayer extends PentagoPlayer {
         if (turnNumber < 3){
             myMove = MyTools.firstThreeMoves(pbs, studentTurn, turnNumber);
         } else {
-            MyTools.DEPTH = 2;
+            MyTools.DEPTH = 3;
 
             if (turnNumber > MyTools.INCREASE_DEPTH){
-                MyTools.DEPTH = 3;
+                MyTools.DEPTH = 4;
             }
 
             if (turnNumber > 2*MyTools.INCREASE_DEPTH){
-                MyTools.DEPTH = 4;
+                MyTools.DEPTH = 5;
             }
 
             myMove = MyTools.findBestMove(pbs, studentTurn);

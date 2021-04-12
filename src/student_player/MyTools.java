@@ -42,7 +42,7 @@ public class MyTools {
         long start = System.currentTimeMillis();
 
         ArrayList<PentagoMove> bestLegalMoves = removeObviousLosses(studentTurn, pbs);
-        //bestLegalMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
+        bestLegalMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
 
         if (bestLegalMoves.size() == 1){
             return bestLegalMoves.get(0);
