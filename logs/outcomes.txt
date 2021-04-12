@@ -1,0 +1,1 @@
+1,RandomPlayer,RandomPlayer,1,RandomPlayer,14,game00001.log,
