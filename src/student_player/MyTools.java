@@ -90,6 +90,7 @@ public class MyTools {
         }
     }
 
+    //////////////////////////// SAMPLING METHODS ////////////////////////////
 
     //////////////////////////// EVALUATION METHODS ////////////////////////////
     public static int checkHorizontals(Piece[][] board, Piece color){
