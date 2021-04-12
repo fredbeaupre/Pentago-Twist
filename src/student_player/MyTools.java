@@ -41,7 +41,7 @@ public class MyTools {
 
             PentagoBoardState cloneState = cloneBoard(pbs);
             cloneState.processMove(move);
-            double ab = alphaBeta(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE, true);
+            double ab = negamax(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE);
             moveRankings.put(move, (double)ab);
         }
 
@@ -88,7 +88,29 @@ public class MyTools {
             }
             return minEval;
         }
-    }
+    } // alphaBeta
+
+    public static int negamax(int studentTurn, PentagoBoardState pbs, int depth, int alpha, int beta){
+        if (depth == 0 || pbs.gameOver()){
+            return getEvaluation(pbs);
+        }
+        int bestValue = Integer.MIN_VALUE;
+        ArrayList<PentagoMove> legalMoves = pbs.getAllLegalMoves();
+
+        for (PentagoMove move : legalMoves){
+            PentagoBoardState cloneState = cloneBoard(pbs);
+            cloneState.processMove(move);
+            int value = negamax(studentTurn, cloneState, depth - 1, -1*beta, -1*alpha);
+            bestValue = Math.max(value, bestValue);
+            if (bestValue >= beta){
+                return beta;
+            }
+            if(value > alpha){
+                alpha = bestValue;
+            }
+        }
+        return bestValue;
+    } // negamax
 
     //////////////////////////// SAMPLING METHODS ////////////////////////////
 
