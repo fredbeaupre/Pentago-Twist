@@ -56,7 +56,7 @@ public class MyTools {
 
             PentagoBoardState cloneState = cloneBoard(pbs);
             cloneState.processMove(move);
-            double ab = negamax(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            double ab = alphaBeta(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE, isMaxPlayer);
             moveRankings.put(move, (double)ab);
         }
 
@@ -653,7 +653,6 @@ public class MyTools {
     ////////////////////////////////////// PRIVATE MONTECARLO CLASS //////////////////////////////////////
 
     ////////////////////////////////////// PRIVATE TREE CLASS //////////////////////////////////////
-
 
     ////////////////////////////////////// PRIVATE NODE CLASS //////////////////////////////////////
 
