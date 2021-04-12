@@ -10,10 +10,6 @@ public class MyTools {
     //////////////////////////// GLOBAL VARIABLES ////////////////////////////
     public static int CENTRE_MARBLE_WEIGHT = 5;
     public static int TRIPLET_WEIGHT = 100;
-    public static int MONICAS_WEIGHT = 100;
-    public static int MIDDLE_FIVE_WEIGHT = 200;
-    public static int STRAIGHT_FIVE_WEIGHT = 300;
-    public static int TRIPLE_POWER_PLAY_WEIGHT = 400;
     public static int QUADRUPLET_WEIGHT = 1000;
     public static int QUINTUPLET_WEIGHT = 100000;
     public static int WIN_COST = 100000;
@@ -40,18 +36,19 @@ public class MyTools {
      * @return the best move
      */
     public static PentagoMove findBestMove(PentagoBoardState pbs, int studentTurn){
-        boolean isMaxPlayer = studentTurn == 0 ? true : false;
+        boolean isMaxPlayer = studentTurn == 0;
         HashMap<PentagoMove, Double> moveRankings = new HashMap<>();
         PentagoMove bestMove;
         long start = System.currentTimeMillis();
 
-        ArrayList<PentagoMove> bestLegalMoves = removeObviousLosses(studentTurn, pbs); // TODO: Filter for best moves (MCTS)
+        ArrayList<PentagoMove> bestLegalMoves = removeObviousLosses(studentTurn, pbs);
+        ArrayList<PentagoMove> evenBetterMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
 
         if (bestLegalMoves.size() == 1){
             return bestLegalMoves.get(0);
         }
 
-        for (PentagoMove move: bestLegalMoves){
+        for (PentagoMove move: evenBetterMoves){
             if (System.currentTimeMillis() - start > MOVE_TIME_LIMIT){
                 System.out.println("Taking too long...");
                 break;
@@ -181,7 +178,112 @@ public class MyTools {
         return bestLegalMoves;
     } // removeObviousLosses
 
+    public static ArrayList<PentagoMove> monteCarloSimulations(PentagoBoardState pbs, int studentTurn, ArrayList<PentagoMove> moves){
+        long start = System.currentTimeMillis();
+        HashMap<PentagoMove, Tuple> moveRankings = new HashMap<>();
+        boolean simDone = false;
+        double simCounter = 1.0;
+
+        for (PentagoMove move: moves){
+            if (!moveRankings.containsKey(move)){ // move has never yet been performed
+                moveRankings.put(move, new Tuple<>(0.0, 0.0));
+            }
+
+            PentagoBoardState cloneState = cloneBoard(pbs);
+            cloneState.processMove(move);
+
+            // simulate with random moves until we reach end of game
+            // i.e., default policy
+            while(!cloneState.gameOver()){
+                cloneState.processMove((PentagoMove) cloneState.getRandomMove());
+            }
+            boolean isWin = checkGameResult(cloneState, studentTurn) > 0;
+            double wins = (double) moveRankings.get(move).x;
+            double visits = (double) moveRankings.get(move).y;
+
+            if (isWin){
+                moveRankings.put(move, new Tuple<>(wins+1, visits+1));
+            } else{
+                moveRankings.put(move, new Tuple<>(wins, visits+1));
+            }
+        } // for-loop
+        // before, we had random simulations, from here we investigate which simulations would
+        // be beneficial
+        // First we compute the upper confidence tree of each state:
+
+        double bestUCT = -1;
+        PentagoMove chosenMove = null;
+        while(true){
+            simCounter++;
+            for (PentagoMove move: moveRankings.keySet()){
+                if (System.currentTimeMillis() - start > SIM_TIME_LIMIT){
+                    simDone = true;
+                    break;
+                }
+
+                Tuple moveStats = moveRankings.get(move);
+                double uct = (  ((double) moveStats.x) / ((double) moveStats.y) ) +
+                        (Math.sqrt(2 * Math.log(simCounter)) / ((double) moveStats.y));
+
+                if (uct > bestUCT){
+                    bestUCT = uct;
+                    chosenMove = move;
+                }
+            } // for-loop
+
+            if (simDone){
+                break;
+            }
+            PentagoBoardState cloneState = cloneBoard(pbs);
+            cloneState.processMove(chosenMove);
+            // simulate with random moves until we reach game's end
+            while(!cloneState.gameOver()){
+                cloneState.processMove((PentagoMove) cloneState.getRandomMove());
+            }
+
+            boolean isWin = checkGameResult(cloneState, studentTurn) > 0;
+            double wins = (double) moveRankings.get(chosenMove).x;
+            double visits = (double) moveRankings.get(chosenMove).y;
+
+            if (isWin){
+                moveRankings.put(chosenMove, new Tuple<>(wins+1, visits+1));
+            }else{
+                moveRankings.put(chosenMove, new Tuple<>(wins, visits+1));
+            }
+            // reset before next iteration of while loop
+            chosenMove = null;
+            bestUCT = -1;
+        } // while loop
+
+        HashMap<PentagoMove, Double> movesAndStats = new HashMap<>();
+        for (PentagoMove move: moveRankings.keySet()){
+            double wins = (double) moveRankings.get(move).x;
+            double visits = (double) moveRankings.get(move).y;
+            movesAndStats.put(move, wins/visits);
+        }
+        movesAndStats = sortByScore(movesAndStats);
+        ArrayList<PentagoMove> topKMoves = topKSample(movesAndStats,50, Integer.MIN_VALUE/2);
+        return topKMoves;
+    } // monteCarloSimulations
+
     //////////////////////////// SAMPLING METHODS ////////////////////////////
+    private static ArrayList<PentagoMove> topKSample(HashMap<PentagoMove, Double> map, int k, double thresh){
+        ArrayList<PentagoMove> topK = new ArrayList<>();
+        Object[] moves = map.keySet().toArray(); // list of moves
+        if (moves.length < k){ // if size is smaller than k, put all moves in the list
+            for (Object move : moves) {
+                topK.add((PentagoMove) move);
+            }
+        }else{ // number of moves is larger than k
+            for(int i = moves.length - 1; i > moves.length - 1 - k; i--){
+                PentagoMove move = (PentagoMove) moves[i];
+                if (map.get(move) > thresh){
+                    topK.add((PentagoMove) moves[i]);
+                }
+            }
+        }
+        return topK;
+    }
 
     //////////////////////////// EVALUATION METHODS ////////////////////////////
 
@@ -362,12 +464,14 @@ public class MyTools {
 
         whiteScore = checkHorizontals(board, whitePlayer)+
                 checkVerticals(board, whitePlayer)+
-                checkCentreMarbles(board, whitePlayer);
+                checkCentreMarbles(board, whitePlayer)+
+                checkDiagonals(pbs, whitePlayer);
 
 
         blackScore = checkHorizontals(board, blackPlayer)+
                 checkVerticals(board, blackPlayer)+
-                checkCentreMarbles(board, blackPlayer);
+                checkCentreMarbles(board, blackPlayer)+
+                checkDiagonals(pbs, blackPlayer);
 
 
 
@@ -388,7 +492,6 @@ public class MyTools {
     public static PentagoMove firstThreeMoves(PentagoBoardState pbs, int playerColor, int turnNumber){
         int randomQuad = getRandomNumberInRange(0,3);
         int randomSwap = getRandomNumberInRange(0,1);
-        System.out.print("Hardcoded Moves");
         Piece color = playerColor == 0 ? Piece.WHITE : Piece.BLACK;
         ArrayList<PentagoCoord> strongestFour = new ArrayList<>();
         strongestFour.add(topLeft);
@@ -528,9 +631,7 @@ public class MyTools {
     }
 
 
-
-
-
+////////////////////////////////////// PRIVATE TUPLE CLASS //////////////////////////////////////
 
     /**
      * Tuple class to hold deconstructed utility
@@ -546,6 +647,13 @@ public class MyTools {
             this.y = y;
         }
     } // Tuple
+
+
+    ////////////////////////////////////// PRIVATE MONTECARLO CLASS //////////////////////////////////////
+
+    ////////////////////////////////////// PRIVATE TREE CLASS //////////////////////////////////////
+
+    ////////////////////////////////////// PRIVATE NODE CLASS //////////////////////////////////////
 
 
 } // MyTools

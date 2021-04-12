@@ -23,13 +23,12 @@ public class StudentPlayer extends PentagoPlayer {
      * make decisions.
      */
     public Move chooseMove(PentagoBoardState boardState) {
-        System.out.print("Student playing...");
+
         Move myMove;
         PentagoBoardState pbs = MyTools.cloneBoard(boardState);
         int studentTurn = pbs.getTurnPlayer();
         int turnNumber = pbs.getTurnNumber();
 
-        System.out.println("Turn Number = " + turnNumber);
         if (turnNumber < 3){
             myMove = MyTools.firstThreeMoves(pbs, studentTurn, turnNumber);
         } else {
