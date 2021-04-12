@@ -1,9 +1,9 @@
-# Server version 0.08 running on localhost:8123
+# Server version 0.08 running on 192.168.2.190:8123
 # Game ID: 48
 # Board class: pentago_twist.PentagoBoard
 # Timeout: 20000
 # First Move Timeout: 30000
-# Date: Mon Apr 12 09:13:01 EDT 2021
+# Date: Mon Apr 12 09:32:01 EDT 2021
 # Player 1: Player-0, 'AlphaBeta', running on localhost
 # Player 2: Player-1, 'RandomPlayer', running on localhost
 START Player-0 AlphaBeta
@@ -35,4 +35,4 @@ START Player-1 RandomPlayer
 3 3 3 1 0
 3 4 2 1 1
 GAMEOVER WINNER 1
-# Game ended: Mon Apr 12 09:13:12 EDT 2021
+# Game ended: Mon Apr 12 09:32:10 EDT 2021

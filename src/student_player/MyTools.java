@@ -31,6 +31,7 @@ public class MyTools {
      * @return the best move
      */
     public static PentagoMove findBestMove(PentagoBoardState pbs, int studentTurn){
+        boolean isMaxPlayer = studentTurn == 0 ? true : false;
         HashMap<PentagoMove, Double> moveRankings = new HashMap<>();
         PentagoMove bestMove;
         long start = System.currentTimeMillis();
@@ -73,7 +74,7 @@ public class MyTools {
      */
     public static int alphaBeta(int studentTurn, PentagoBoardState pbs, int depth, int alpha, int beta, boolean isMaxPlayer){
         if (depth == 0 || pbs.gameOver()){
-            return getEvaluation(pbs, studentTurn);
+            return getEvaluation(pbs);
         }
 
         int eval;
@@ -118,9 +119,9 @@ public class MyTools {
      * @return negamax best value found
      */
     public static int negamax(int currentTurn, PentagoBoardState pbs, int depth, int alpha, int beta){
-        int currentPlayer = currentTurn % 2 == 0 ? 0 : 1;
+        int currentColor = currentTurn % 2 == 0 ? 1: -1;
         if (depth == 0 || pbs.gameOver()){
-            return getEvaluation(pbs, currentPlayer);
+            return currentColor * getEvaluation(pbs);
         }
         int bestValue = Integer.MIN_VALUE;
         ArrayList<PentagoMove> legalMoves = pbs.getAllLegalMoves();
@@ -151,7 +152,6 @@ public class MyTools {
      * @return partial cost associated with horizontal streaks
      */
     public static int checkHorizontals(Piece[][] board, Piece color){
-        int pairs = 0;
         int triplets = 0;
         int quadruplets = 0;
         int quintuplets = 0;
@@ -179,21 +179,25 @@ public class MyTools {
 
     /**
      * Gets the cost of a board state
+     * Note that the evaluation always returns a value from the point of view of white, i.e.,
+     * it will return large value for white having an advantage and small values for a disadvantage
+     * This is done so that it's easier to use the same eval function for both alpha-beta and negamax
      * @param pbs: board state
      * @return cost
      */
-    public static int getEvaluation(PentagoBoardState pbs, int player){
-        int playerScore = 0;
-        int oppScore = 0;
+    public static int getEvaluation(PentagoBoardState pbs){
+        int whiteScore = 0;
+        int blackScore = 0;
         int cost;
         Piece[][] board = pbs.getBoard();
 
-        Piece playerColor = player == 0 ? Piece.WHITE : Piece.BLACK;
-        Piece oppColor  = player == 0 ? Piece.BLACK : Piece.WHITE;
+        Piece whitePlayer = Piece.WHITE;
+        Piece blackPlayer = Piece.BLACK;
 
-        playerScore = checkHorizontals(board, playerColor);
-        oppScore = checkHorizontals(board, oppColor);
-        cost = playerScore - oppScore;
+
+        whiteScore = checkHorizontals(board, whitePlayer);
+        blackScore = checkHorizontals(board, blackPlayer);
+        cost = whiteScore - blackScore;
         return cost;
     } //getEvaluation
 

@@ -1,9 +1,9 @@
-# Server version 0.08 running on 192.168.2.190:8123
+# Server version 0.08 running on localhost:8123
 # Game ID: 1
 # Board class: pentago_twist.PentagoBoard
 # Timeout: 20000
 # First Move Timeout: 30000
-# Date: Mon Apr 12 09:05:35 EDT 2021
+# Date: Mon Apr 12 09:21:57 EDT 2021
 # Player 1: Player-0, 'RandomPlayer', running on localhost
 # Player 2: Player-1, 'AlphaBeta', running on localhost
 START Player-0 RandomPlayer
@@ -13,19 +13,33 @@ START Player-1 AlphaBeta
 0 3 1 0 0
 3 4 3 0 1
 4 0 0 1 0
-1 5 1 0 1
-1 3 2 1 0
-5 5 2 0 1
-5 3 1 1 0
-0 5 3 0 1
+2 0 0 0 1
+1 4 2 1 0
+4 4 2 0 1
+5 4 1 1 0
+1 1 2 0 1
 4 2 0 0 0
-2 5 1 0 1
+3 0 0 0 1
 4 3 2 1 0
-5 5 0 1 1
-3 4 0 0 0
-0 5 3 1 1
-5 2 0 0 0
-3 3 0 1 1
+3 5 3 0 1
+3 3 0 0 0
+5 3 2 0 1
+5 0 0 0 0
+0 2 2 0 1
 3 1 3 0 0
+4 1 1 0 1
+2 2 0 0 0
+0 4 3 1 1
+2 5 3 0 0
+0 0 0 0 1
+0 3 2 1 0
+1 3 2 1 1
+2 1 0 0 0
+3 2 0 0 1
+5 2 0 1 0
+1 5 3 1 1
+1 2 0 0 0
+2 4 0 1 1
+4 5 3 0 0
 GAMEOVER WINNER 1
-# Game ended: Mon Apr 12 09:05:39 EDT 2021
+# Game ended: Mon Apr 12 09:22:14 EDT 2021
