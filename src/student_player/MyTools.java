@@ -12,6 +12,7 @@ public class MyTools {
     public static int TRIPLET_WEIGHT = 100;
     public static int QUADRUPLET_WEIGHT = 1000;
     public static int QUINTUPLET_WEIGHT = 100000;
+    public static int WIN_COST = 100000;
     public static final int SIM_TIME_LIMIT = 800;
     public static final int MOVE_TIME_LIMIT = 1920;
     public static int DEPTH = 2;
@@ -36,7 +37,7 @@ public class MyTools {
         PentagoMove bestMove;
         long start = System.currentTimeMillis();
 
-        ArrayList<PentagoMove> bestLegalMoves = pbs.getAllLegalMoves(); // TODO: Filter for best moves (MCTS)
+        ArrayList<PentagoMove> bestLegalMoves = removeObviousLosses(studentTurn, pbs); // TODO: Filter for best moves (MCTS)
 
         if (bestLegalMoves.size() == 1){
             return bestLegalMoves.get(0);
@@ -141,9 +142,139 @@ public class MyTools {
         return bestValue;
     } // negamax
 
+    /**
+     *
+     * @param playerTurn
+     * @param pbs
+     * @return
+     */
+    public static ArrayList<PentagoMove> removeObviousLosses(int playerTurn, PentagoBoardState pbs){
+        ArrayList<PentagoMove> legalMoves = pbs.getAllLegalMoves();
+        Collections.shuffle(legalMoves);
+        ArrayList<PentagoMove> bestLegalMoves = new ArrayList<>();
+
+        for (PentagoMove move : legalMoves){
+            PentagoBoardState cloneState = cloneBoard(pbs);
+            cloneState.processMove(move);
+            boolean isWin = cloneState.gameOver() && checkGameResult(cloneState, playerTurn) > 0;
+            boolean isLoss = cloneState.gameOver() && checkGameResult(cloneState, playerTurn) < 0;
+
+            if (isWin){ // return right away if we have a win
+                bestLegalMoves.add(move);
+                return bestLegalMoves;
+            }
+            if (isLoss){ // skip move if it leads directly to a loss
+                continue;
+            }
+
+            bestLegalMoves.add(move); // add moves that are neither a direct loss nor a direct win
+        }
+
+        return bestLegalMoves;
+    } // removeObviousLosses
+
     //////////////////////////// SAMPLING METHODS ////////////////////////////
 
     //////////////////////////// EVALUATION METHODS ////////////////////////////
+
+    public static int checkDiagonals(PentagoBoardState pbs, Piece color){
+        int totalCost = 0;
+        PentagoCoord topLeftDiag = new PentagoCoord(0,1);
+        PentagoCoord midLeftDiag = new PentagoCoord(0, 0);
+        PentagoCoord bottomLeftDiag = new PentagoCoord(1, 0);
+        PentagoCoord topRightDiag = new PentagoCoord(0,4);
+        PentagoCoord midRightDiag = new PentagoCoord(0,5);
+        PentagoCoord bottomRightDiag = new PentagoCoord(1,5);
+
+        PentagoCoord[] leftRightDiags = {topLeftDiag, midLeftDiag, bottomLeftDiag};
+        PentagoCoord[] rightLeftDiags = {topRightDiag, midRightDiag, bottomRightDiag};
+
+        for (PentagoCoord coord: leftRightDiags){
+            totalCost += traverseDiagonal(pbs, coord, getNextDiagRight, color);
+        }
+
+        for (PentagoCoord coord: rightLeftDiags){
+            totalCost += traverseDiagonal(pbs, coord, getNextDiagLeft, color);
+        }
+        return totalCost;
+    }
+
+    /**
+     * Traverse a diagonal and look for streaks
+     * @param pbs
+     * @param startSquare
+     * @param direction
+     * @param color
+     * @return
+     */
+    public static int traverseDiagonal(PentagoBoardState pbs, PentagoCoord startSquare, UnaryOperator<PentagoCoord> direction, Piece color){
+        int streak = 1;
+        int triplets = 0;
+        int quadruplets = 0;
+        int quintuplets = 0;
+
+        PentagoCoord current = startSquare;
+        while (true){
+            try{
+                if (pbs.getPieceAt(current) == color){
+                    streak++;
+                    current = direction.apply(current);
+                }else{
+                    switch(streak){
+                        case 1: ;
+                        case 2: ;
+                        case 3: triplets++;
+                        case 4: quadruplets++;
+                        case 5: quintuplets++;
+                    }
+                    streak = 1;
+                }
+            } catch(IllegalArgumentException e){
+                switch(streak){
+                    case 1: ;
+                    case 2: ;
+                    case 3: triplets++;
+                    case 4: quadruplets++;
+                    case 5: quintuplets++;
+                }
+                streak = 1;
+                break;
+            } // end of try block
+        } // while loop
+        return (triplets * TRIPLET_WEIGHT) + (quadruplets * QUADRUPLET_WEIGHT) + (quintuplets*QUINTUPLET_WEIGHT);
+    }
+
+    /**
+     *
+     * @param board
+     * @param color
+     * @return
+     */
+    public static int checkVerticals(Piece[][] board, Piece color){
+        int triplets = 0;
+        int quadruplets = 0;
+        int quintuplets = 0;
+        int streak = 1;
+        for (int j = 0; j< PentagoBoardState.BOARD_SIZE; j++){
+            for (int i= 0; i < PentagoBoardState.BOARD_SIZE-1;i++){
+                Piece piece = board[i][j];
+                Piece nextPiece = board[i+1][j];
+                if (piece == nextPiece && piece == color){
+                    streak++;
+                }else{
+                    switch(streak){
+                        case 1: ;
+                        case 2: ;
+                        case 3: triplets++;
+                        case 4: quadruplets++;
+                        case 5: quintuplets++;
+                    }
+                    streak = 1;
+                }
+            } // inner for-loop
+        } // outer for-loop;
+        return (triplets * TRIPLET_WEIGHT) + (quadruplets * QUADRUPLET_WEIGHT) + (quintuplets * QUINTUPLET_WEIGHT);
+    } //checkVerticals
 
     /**
      * Checks horizontals for three, four or five in a row of the given color
@@ -175,7 +306,7 @@ public class MyTools {
             } // inner for-loop
         } // outer for-loop
         return (triplets * TRIPLET_WEIGHT) + (quadruplets * QUADRUPLET_WEIGHT) + (quintuplets * QUINTUPLET_WEIGHT);
-    } // check Horizontal
+    } // checkHorizontals
 
     /**
      * Gets the cost of a board state
@@ -195,14 +326,36 @@ public class MyTools {
         Piece blackPlayer = Piece.BLACK;
 
 
-        whiteScore = checkHorizontals(board, whitePlayer);
-        blackScore = checkHorizontals(board, blackPlayer);
+        whiteScore = checkHorizontals(board, whitePlayer)+
+                checkVerticals(board, whitePlayer);
+
+
+
+
+        blackScore = checkHorizontals(board, blackPlayer)+
+                checkVerticals(board, blackPlayer);
+
+
+
+
         cost = whiteScore - blackScore;
         return cost;
     } //getEvaluation
 
 
     //////////////////////////// HELPER METHODS ////////////////////////////
+
+    /**
+     *
+     * @param pbs
+     * @param playerTurn
+     * @return
+     */
+    public static int checkGameResult(PentagoBoardState pbs, int playerTurn){
+        int winner = pbs.getWinner();
+        int cost = winner == playerTurn ? WIN_COST : -1*WIN_COST;
+        return cost;
+    } // checkGameResult
 
     /**
      * Sorts a hashmap of moves in order of utility values
