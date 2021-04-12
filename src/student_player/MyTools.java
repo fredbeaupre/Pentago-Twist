@@ -42,13 +42,13 @@ public class MyTools {
         long start = System.currentTimeMillis();
 
         ArrayList<PentagoMove> bestLegalMoves = removeObviousLosses(studentTurn, pbs);
-        ArrayList<PentagoMove> evenBetterMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
+        //bestLegalMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
 
         if (bestLegalMoves.size() == 1){
             return bestLegalMoves.get(0);
         }
 
-        for (PentagoMove move: evenBetterMoves){
+        for (PentagoMove move: bestLegalMoves){
             if (System.currentTimeMillis() - start > MOVE_TIME_LIMIT){
                 System.out.println("Taking too long...");
                 break;
@@ -364,6 +364,7 @@ public class MyTools {
                         case 5: quintuplets++;
                     }
                     streak = 1;
+                    current = direction.apply(current);
                 }
             } catch(IllegalArgumentException e){
                 switch(streak){
@@ -652,6 +653,7 @@ public class MyTools {
     ////////////////////////////////////// PRIVATE MONTECARLO CLASS //////////////////////////////////////
 
     ////////////////////////////////////// PRIVATE TREE CLASS //////////////////////////////////////
+
 
     ////////////////////////////////////// PRIVATE NODE CLASS //////////////////////////////////////
 
