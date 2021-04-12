@@ -377,7 +377,7 @@ public class MyTools {
         PentagoMove move = null;
         PentagoCoord newCoord = null;
 
-        if (turnNumber == 0 || turnNumber == 1 ){
+        if (turnNumber == 0 || turnNumber == 1){
             for (PentagoCoord coord : strongestFour){
                 if (pbs.getPieceAt(coord) == Piece.EMPTY){
                     move = new PentagoMove(coord, 0, 0, playerColor);
