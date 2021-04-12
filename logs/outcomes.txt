@@ -1,1 +1,2 @@
-1,RandomPlayer,RandomPlayer,1,RandomPlayer,14,game00001.log,
+1,RandomPlayer,AlphaBeta,1,AlphaBeta,6,game00001.log,
+2,RandomPlayer,AlphaBeta,1,AlphaBeta,17,game00002.log,

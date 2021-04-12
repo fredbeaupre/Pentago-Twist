@@ -14,7 +14,7 @@ public class StudentPlayer extends PentagoPlayer {
      * associate you with your agent. The constructor should do nothing else.
      */
     public StudentPlayer() {
-        super("xxxxxxxxx");
+        super("AlphaBeta");
     }
 
     /**
@@ -23,13 +23,23 @@ public class StudentPlayer extends PentagoPlayer {
      * make decisions.
      */
     public Move chooseMove(PentagoBoardState boardState) {
-        // You probably will make separate functions in MyTools.
-        // For example, maybe you'll need to load some pre-processed best opening
-        // strategies...
-        MyTools.getSomething();
+        Move myMove;
+        PentagoBoardState pbs = MyTools.cloneBoard(boardState);
+        int studentTurn = pbs.getTurnPlayer();
+        int turnNumber = pbs.getTurnNumber();
 
-        // Is random the best you can do?
-        Move myMove = boardState.getRandomMove();
+        MyTools.DEPTH = 2;
+
+        if (turnNumber > MyTools.INCREASE_DEPTH){
+            MyTools.DEPTH = 3;
+        }
+
+        if (turnNumber > 2*MyTools.INCREASE_DEPTH){
+            MyTools.DEPTH = 4;
+        }
+
+        myMove = MyTools.findBestMove(pbs, studentTurn);
+
 
         // Return your move to be processed by the server.
         return myMove;
