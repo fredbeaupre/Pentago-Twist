@@ -10,6 +10,10 @@ public class MyTools {
     //////////////////////////// GLOBAL VARIABLES ////////////////////////////
     public static int CENTRE_MARBLE_WEIGHT = 5;
     public static int TRIPLET_WEIGHT = 100;
+    public static int MONICAS_WEIGHT = 100;
+    public static int MIDDLE_FIVE_WEIGHT = 200;
+    public static int STRAIGHT_FIVE_WEIGHT = 300;
+    public static int TRIPLE_POWER_PLAY_WEIGHT = 400;
     public static int QUADRUPLET_WEIGHT = 1000;
     public static int QUINTUPLET_WEIGHT = 100000;
     public static int WIN_COST = 100000;
@@ -181,6 +185,84 @@ public class MyTools {
 
     //////////////////////////// EVALUATION METHODS ////////////////////////////
 
+    public static int checkMonicasFive(PentagoBoardState pbs, Piece color){
+        boolean oneInstance = true;
+        int monicaCounter = 0;
+
+        ArrayList<ArrayList<PentagoCoord>> monicas = buildMonicasFive();
+        for (ArrayList<PentagoCoord> monica : monicas){
+            for(PentagoCoord coord : monica){
+                if (pbs.getPieceAt(coord) != color){
+                    oneInstance = false;
+                }
+            }
+            if (oneInstance){
+                monicaCounter++;
+            }
+            oneInstance = true;
+        } // outer-for loop
+        return (monicaCounter * MONICAS_WEIGHT);
+    }
+
+    public static ArrayList<ArrayList<PentagoCoord>> buildMonicasFive(){
+        // First we build 4 different instances of the "Monica's five" setup
+        // choosing the 4 so that all quadrants are solicited
+        ArrayList<ArrayList<PentagoCoord>> monica = new ArrayList<ArrayList<PentagoCoord>>();
+        ArrayList<PentagoCoord> monica1= new ArrayList<>();
+        ArrayList<PentagoCoord> monica2= new ArrayList<>();
+        ArrayList<PentagoCoord> monica3= new ArrayList<>();
+        ArrayList<PentagoCoord> monica4= new ArrayList<>();
+
+        // first instance
+        PentagoCoord twoZero = new PentagoCoord(2, 0);
+        PentagoCoord oneOne = new PentagoCoord(1,1);
+        PentagoCoord threeThree = new PentagoCoord(3,3);
+        PentagoCoord fourFour = new PentagoCoord(4,4);
+        monica1.add(twoZero);
+        monica1.add(oneOne);
+        monica1.add(threeThree);
+        monica1.add(fourFour);
+
+        // second instance
+        PentagoCoord fourOne = new PentagoCoord(4,1);
+        PentagoCoord threeTwo = new PentagoCoord(3, 2);
+        PentagoCoord oneFour = new PentagoCoord(1, 4);
+        PentagoCoord twoFive = new PentagoCoord(2,5);
+        monica2.add(fourOne);
+        monica2.add(threeTwo);
+        monica2.add(oneFour);
+        monica2.add(twoFive);
+
+        // third instance
+        PentagoCoord twoTwo = new PentagoCoord(2,2);
+        PentagoCoord threeFive = new PentagoCoord(3,5);
+        monica3.add(oneOne);
+        monica3.add(twoTwo);
+        monica3.add(fourFour);
+        monica3.add(threeFive);
+
+        // fourth instance
+        PentagoCoord threeZero = new PentagoCoord(3, 0);
+        PentagoCoord twoThree = new PentagoCoord(2,3);
+        monica4.add(threeZero);
+        monica4.add(fourOne);
+        monica4.add(twoThree);
+        monica4.add(oneFour);
+
+        monica.add(monica1);
+        monica.add(monica2);
+        monica.add(monica3);
+        monica.add(monica4);
+        return monica;
+    } // buildMonicasFive
+
+    /**
+     * Checks the number of marbles the current player has in the centre of the board, and
+     * mulitplies that quantity by the weight of centre marbles
+     * @param board: board state
+     * @param color: this player's piece color
+     * @return partial cost of board associated with centre marbles
+     */
     public static int checkCentreMarbles(Piece[][] board, Piece color){
         int counter = 0;
         for (int i = 1; i< PentagoBoardState.BOARD_SIZE - 1; i++){
@@ -365,7 +447,17 @@ public class MyTools {
 
     //////////////////////////// "THEORY" METHODS ////////////////////////////
 
+    /**
+     * Function to hardcode the agent's first three moves (only 2 if black) according to
+     * our own opening "theory"
+     * @param pbs
+     * @param playerColor
+     * @param turnNumber
+     * @return
+     */
     public static PentagoMove firstThreeMoves(PentagoBoardState pbs, int playerColor, int turnNumber){
+        int randomQuad = getRandomNumberInRange(0,3);
+        int randomSwap = getRandomNumberInRange(0,1);
         System.out.print("Hardcoded Moves");
         Piece color = playerColor == 0 ? Piece.WHITE : Piece.BLACK;
         ArrayList<PentagoCoord> strongestFour = new ArrayList<>();
@@ -380,14 +472,78 @@ public class MyTools {
         if (turnNumber == 0 || turnNumber == 1){
             for (PentagoCoord coord : strongestFour){
                 if (pbs.getPieceAt(coord) == Piece.EMPTY){
-                    move = new PentagoMove(coord, 0, 0, playerColor);
+                    move = new PentagoMove(coord, randomQuad, randomSwap, playerColor);
                 }
             }
         }
-        else if (turnNumber == 2){
-            // TODO:
+        else if (turnNumber == 2 && color == Piece.WHITE){
+            for (PentagoCoord coord: strongestFour){
+                if (pbs.getPieceAt(coord) == color){
+                    newCoord = centreExpansion(pbs,coord, playerColor, color);
+                    move = new PentagoMove(newCoord, randomQuad, randomSwap, playerColor);
+                }
+            }
+        } else{
+            findBestMove(pbs,playerColor);
         }
         return move;
+    }
+
+    /**
+     * Hardcode the 3rd move so that the agent tries to make a move towards the center
+     * that also gives him a marble pair
+     * @param pbs
+     * @param coord
+     * @param playerColor
+     * @param color
+     * @return
+     */
+    public static PentagoCoord centreExpansion(PentagoBoardState pbs, PentagoCoord coord, int playerColor, Piece color){
+        int x = coord.getX();
+        int y = coord.getY();
+        PentagoCoord newCoord = null;
+
+        if (x == 1 && y == 1){
+            if (pbs.getPieceAt(x, y+1) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x, y+1);
+            } else if(pbs.getPieceAt(x+1, y) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x+1, y);
+            }
+            else if(pbs.getPieceAt(x+1, y+1 ) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x+1, y+1);
+            }
+        } // topLeft case
+        else if (x == 1 && y == 4){
+            if (pbs.getPieceAt(x, y-1) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x, y-1);
+            } else if(pbs.getPieceAt(x+1, y) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x+1, y);
+            }
+            else if(pbs.getPieceAt(x+1, y-1 ) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x+1, y-1);
+            }
+        } // topRight case
+        else if (x == 4 && y == 1){
+            if (pbs.getPieceAt(x-1, y) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x-1, y);
+            } else if(pbs.getPieceAt(x, y+1) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x, y+1);
+            }
+            else if(pbs.getPieceAt(x-1, y+1 ) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x-1, y+1);
+            }
+        } // bottomLeft case
+        else {
+            if (pbs.getPieceAt(x-1, y) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x-1, y);
+            } else if(pbs.getPieceAt(x, y-1) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x, y-1);
+            }
+            else if(pbs.getPieceAt(x-1, y-1 ) == Piece.EMPTY){
+                newCoord = new PentagoCoord(x-1, y-1);
+            }
+        } // topLeft case
+        return newCoord;
     }
 
 
@@ -430,6 +586,16 @@ public class MyTools {
     public static PentagoBoardState cloneBoard(PentagoBoardState pbs){
         return (PentagoBoardState) pbs.clone();
     } // sortByScore
+
+    private static int getRandomNumberInRange(int min, int max) {
+
+        if (min >= max) {
+            throw new IllegalArgumentException("max must be greater than min");
+        }
+
+        Random r = new Random();
+        return r.nextInt((max - min) + 1) + min;
+    }
 
 
 

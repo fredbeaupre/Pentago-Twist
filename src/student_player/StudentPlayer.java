@@ -30,7 +30,7 @@ public class StudentPlayer extends PentagoPlayer {
         int turnNumber = pbs.getTurnNumber();
 
         System.out.println("Turn Number = " + turnNumber);
-        if (turnNumber < 2){
+        if (turnNumber < 3){
             myMove = MyTools.firstThreeMoves(pbs, studentTurn, turnNumber);
         } else {
             MyTools.DEPTH = 2;
