@@ -23,22 +23,29 @@ public class StudentPlayer extends PentagoPlayer {
      * make decisions.
      */
     public Move chooseMove(PentagoBoardState boardState) {
+        System.out.print("Student playing...");
         Move myMove;
         PentagoBoardState pbs = MyTools.cloneBoard(boardState);
         int studentTurn = pbs.getTurnPlayer();
         int turnNumber = pbs.getTurnNumber();
 
-        MyTools.DEPTH = 2;
+        System.out.println("Turn Number = " + turnNumber);
+        if (turnNumber < 2){
+            myMove = MyTools.firstThreeMoves(pbs, studentTurn, turnNumber);
+        } else {
+            MyTools.DEPTH = 2;
 
-        if (turnNumber > MyTools.INCREASE_DEPTH){
-            MyTools.DEPTH = 4;
+            if (turnNumber > MyTools.INCREASE_DEPTH){
+                MyTools.DEPTH = 4;
+            }
+
+            if (turnNumber > 2*MyTools.INCREASE_DEPTH){
+                MyTools.DEPTH = 5;
+            }
+
+            myMove = MyTools.findBestMove(pbs, studentTurn);
+
         }
-
-        if (turnNumber > 2*MyTools.INCREASE_DEPTH){
-            MyTools.DEPTH = 5;
-        }
-
-        myMove = MyTools.findBestMove(pbs, studentTurn);
 
 
         // Return your move to be processed by the server.

@@ -21,6 +21,10 @@ public class MyTools {
     private static final UnaryOperator<PentagoCoord> getNextVertical = c -> new PentagoCoord(c.getX()+1, c.getY());
     private static final UnaryOperator<PentagoCoord> getNextDiagRight = c -> new PentagoCoord(c.getX()+1, c.getY()+1);
     private static final UnaryOperator<PentagoCoord> getNextDiagLeft = c -> new PentagoCoord(c.getX()+1, c.getY()-1);
+    private static final PentagoCoord topLeft = new PentagoCoord(1, 1);
+    private static final PentagoCoord topRight = new PentagoCoord(1, 4);
+    private static final PentagoCoord bottomLeft = new PentagoCoord(4, 1);
+    private static final PentagoCoord bottomRight = new PentagoCoord(4,4);
 
     //////////////////////////// SEARCH ALGORITHMS ////////////////////////////
 
@@ -177,6 +181,24 @@ public class MyTools {
 
     //////////////////////////// EVALUATION METHODS ////////////////////////////
 
+    public static int checkCentreMarbles(Piece[][] board, Piece color){
+        int counter = 0;
+        for (int i = 1; i< PentagoBoardState.BOARD_SIZE - 1; i++){
+            for (int j = 1; j < PentagoBoardState.BOARD_SIZE -1; j++){
+                if (board[i][j] == color){
+                    counter++;
+                }
+            }
+        }
+        return (counter*CENTRE_MARBLE_WEIGHT);
+    }
+
+    /**
+     *
+     * @param pbs
+     * @param color
+     * @return
+     */
     public static int checkDiagonals(PentagoBoardState pbs, Piece color){
         int totalCost = 0;
         PentagoCoord topLeftDiag = new PentagoCoord(0,1);
@@ -327,20 +349,46 @@ public class MyTools {
 
 
         whiteScore = checkHorizontals(board, whitePlayer)+
-                checkVerticals(board, whitePlayer);
-
-
+                checkVerticals(board, whitePlayer)+
+                checkCentreMarbles(board, whitePlayer);
 
 
         blackScore = checkHorizontals(board, blackPlayer)+
-                checkVerticals(board, blackPlayer);
-
+                checkVerticals(board, blackPlayer)+
+                checkCentreMarbles(board, blackPlayer);
 
 
 
         cost = whiteScore - blackScore;
         return cost;
     } //getEvaluation
+
+    //////////////////////////// "THEORY" METHODS ////////////////////////////
+
+    public static PentagoMove firstThreeMoves(PentagoBoardState pbs, int playerColor, int turnNumber){
+        System.out.print("Hardcoded Moves");
+        Piece color = playerColor == 0 ? Piece.WHITE : Piece.BLACK;
+        ArrayList<PentagoCoord> strongestFour = new ArrayList<>();
+        strongestFour.add(topLeft);
+        strongestFour.add(topRight);
+        strongestFour.add(bottomLeft);
+        strongestFour.add(bottomRight);
+        Collections.shuffle(strongestFour);
+        PentagoMove move = null;
+        PentagoCoord newCoord = null;
+
+        if (turnNumber == 0 || turnNumber == 1 ){
+            for (PentagoCoord coord : strongestFour){
+                if (pbs.getPieceAt(coord) == Piece.EMPTY){
+                    move = new PentagoMove(coord, 0, 0, playerColor);
+                }
+            }
+        }
+        else if (turnNumber == 2){
+            // TODO:
+        }
+        return move;
+    }
 
 
     //////////////////////////// HELPER METHODS ////////////////////////////
