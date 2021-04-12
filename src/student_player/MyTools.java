@@ -22,6 +22,14 @@ public class MyTools {
     private static final UnaryOperator<PentagoCoord> getNextDiagLeft = c -> new PentagoCoord(c.getX()+1, c.getY()-1);
 
     //////////////////////////// SEARCH ALGORITHMS ////////////////////////////
+
+    /**
+     * Function to find the best move using alpha-beta pruning or negamax, applied on an
+     * ArrayList of moves that were filtered from running some MonteCarlo simulations
+     * @param pbs: board state
+     * @param studentTurn: tells us if student has the white or black pieces
+     * @return the best move
+     */
     public static PentagoMove findBestMove(PentagoBoardState pbs, int studentTurn){
         HashMap<PentagoMove, Double> moveRankings = new HashMap<>();
         PentagoMove bestMove;
@@ -53,9 +61,19 @@ public class MyTools {
 
     } // findBestMove
 
+    /**
+     * Alpha-Beta pruning algorithm
+     * @param studentTurn: white or black pieces
+     * @param pbs: board state
+     * @param depth: to what depth alpha-beta will search before return cost
+     * @param alpha: alpha value
+     * @param beta: beta value
+     * @param isMaxPlayer: if student is maxPlayer
+     * @return alpha-beta bestValue
+     */
     public static int alphaBeta(int studentTurn, PentagoBoardState pbs, int depth, int alpha, int beta, boolean isMaxPlayer){
         if (depth == 0 || pbs.gameOver()){
-            return getEvaluation(pbs);
+            return getEvaluation(pbs, studentTurn);
         }
 
         int eval;
@@ -90,9 +108,19 @@ public class MyTools {
         }
     } // alphaBeta
 
-    public static int negamax(int studentTurn, PentagoBoardState pbs, int depth, int alpha, int beta){
+    /**
+     * Negamax Search algorithm
+     * @param currentTurn: white or black pieces
+     * @param pbs: board state
+     * @param depth: to what depth negamax will search
+     * @param alpha: alpha value
+     * @param beta: beta value
+     * @return negamax best value found
+     */
+    public static int negamax(int currentTurn, PentagoBoardState pbs, int depth, int alpha, int beta){
+        int currentPlayer = currentTurn % 2 == 0 ? 0 : 1;
         if (depth == 0 || pbs.gameOver()){
-            return getEvaluation(pbs);
+            return getEvaluation(pbs, currentPlayer);
         }
         int bestValue = Integer.MIN_VALUE;
         ArrayList<PentagoMove> legalMoves = pbs.getAllLegalMoves();
@@ -100,7 +128,7 @@ public class MyTools {
         for (PentagoMove move : legalMoves){
             PentagoBoardState cloneState = cloneBoard(pbs);
             cloneState.processMove(move);
-            int value = negamax(studentTurn, cloneState, depth - 1, -1*beta, -1*alpha);
+            int value = -1*negamax(currentTurn+1, cloneState, depth - 1, -1*beta, -1*alpha);
             bestValue = Math.max(value, bestValue);
             if (bestValue >= beta){
                 return beta;
@@ -115,6 +143,13 @@ public class MyTools {
     //////////////////////////// SAMPLING METHODS ////////////////////////////
 
     //////////////////////////// EVALUATION METHODS ////////////////////////////
+
+    /**
+     * Checks horizontals for three, four or five in a row of the given color
+     * @param board: board state
+     * @param color: player's pieces color
+     * @return partial cost associated with horizontal streaks
+     */
     public static int checkHorizontals(Piece[][] board, Piece color){
         int pairs = 0;
         int triplets = 0;
@@ -140,15 +175,36 @@ public class MyTools {
             } // inner for-loop
         } // outer for-loop
         return (triplets * TRIPLET_WEIGHT) + (quadruplets * QUADRUPLET_WEIGHT) + (quintuplets * QUINTUPLET_WEIGHT);
-    }
+    } // check Horizontal
 
-    public static int getEvaluation(PentagoBoardState pbs){
-        return 0;
-    }
+    /**
+     * Gets the cost of a board state
+     * @param pbs: board state
+     * @return cost
+     */
+    public static int getEvaluation(PentagoBoardState pbs, int player){
+        int playerScore = 0;
+        int oppScore = 0;
+        int cost;
+        Piece[][] board = pbs.getBoard();
+
+        Piece playerColor = player == 0 ? Piece.WHITE : Piece.BLACK;
+        Piece oppColor  = player == 0 ? Piece.BLACK : Piece.WHITE;
+
+        playerScore = checkHorizontals(board, playerColor);
+        oppScore = checkHorizontals(board, oppColor);
+        cost = playerScore - oppScore;
+        return cost;
+    } //getEvaluation
 
 
     //////////////////////////// HELPER METHODS ////////////////////////////
 
+    /**
+     * Sorts a hashmap of moves in order of utility values
+     * @param map: Hashmap of keys = moves and values = utilities
+     * @return sorted HashMap of moves
+     */
     public static HashMap<PentagoMove, Double> sortByScore(HashMap<PentagoMove, Double> map){
         List<Map.Entry<PentagoMove, Double>> moveList = new LinkedList<Map.Entry<PentagoMove, Double>> (map.entrySet());
 
@@ -168,7 +224,7 @@ public class MyTools {
 
     public static PentagoBoardState cloneBoard(PentagoBoardState pbs){
         return (PentagoBoardState) pbs.clone();
-    }
+    } // sortByScore
 
 
 
