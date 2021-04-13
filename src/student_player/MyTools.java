@@ -42,7 +42,7 @@ public class MyTools {
         long start = System.currentTimeMillis();
 
         ArrayList<PentagoMove> bestLegalMoves = removeObviousLosses(studentTurn, pbs);
-        bestLegalMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
+        // bestLegalMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
 
         if (bestLegalMoves.size() == 1){
             return bestLegalMoves.get(0);
@@ -56,7 +56,7 @@ public class MyTools {
 
             PentagoBoardState cloneState = cloneBoard(pbs);
             cloneState.processMove(move);
-            double ab = alphaBeta(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE, isMaxPlayer);
+            double ab = negamax(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE);
             moveRankings.put(move, (double)ab);
         }
 
@@ -651,10 +651,138 @@ public class MyTools {
 
 
     ////////////////////////////////////// PRIVATE MONTECARLO CLASS //////////////////////////////////////
+    static class MonteCarlo {
+        private static final int WIN_SCORE = 10;
+        private int depth;
+        private int opponent;
+
+        public MonteCarlo(){
+            this.depth = 15;
+        }
+
+        public int getDepth(){
+            return this.depth;
+        }
+
+        public void setDepth(int depth) {
+            this.depth = depth;
+        }
+
+        public int getOpponent(){
+            return this.opponent;
+        }
+
+        public void setOpponent(int opponent) {
+            this.opponent = opponent;
+        }
+
+        private int getTimeForThisDepth(){
+            return (2000);
+        }
+
+        public PentagoMove findBestMCMove(PentagoBoardState pbs, int playerTurn){
+            long start = System.currentTimeMillis();
+            long end = start + 60 * getTimeForThisDepth();
+            PentagoBoardState board = cloneBoard(pbs);
+            PentagoMove bestMove = null;
+            int gamesFinished = 0;
+            int opponent = playerTurn == 0 ? 1 : 0;
+            State rootState = new State(board);
+            rootState.setLegalMoves(board.getAllLegalMoves());
+            rootState.setPbs(board);
+            rootState.setPlayerTurn(playerTurn);
+            Node rootNode = new Node(rootState);
+            rootNode.setState(rootState);
+            Tree tree = new Tree(rootNode);
+            while(System.currentTimeMillis() < end){
+
+                // Select
+                Node goodNode = selectGoodNode(rootNode);
+                // Expand
+                if (!goodNode.getState().getPbs().gameOver()){
+                    expandNode(goodNode);
+                }
+                // Simulate
+                Node nodeToVisit = goodNode;
+                if (goodNode.getChildren().size() > 0 ){
+                    nodeToVisit = goodNode.getRandomChild();
+                }
+                int result = simulatePlay(nodeToVisit);
+                gamesFinished++;
+                // Update
+                backProp(nodeToVisit, result);
+            }
+            System.out.println("Games simulated : " + gamesFinished);
+            Node bestNode = rootNode.getBestChild();
+            for (PentagoMove move : board.getAllLegalMoves()){
+                PentagoBoardState tempBoard = cloneBoard(board);
+                tempBoard.processMove(move);
+                if (tempBoard.equals(bestNode.getState().getPbs())){
+                    bestMove = move;
+                }
+            }
+
+            tree.setRoot(bestNode);
+            return bestMove;
+
+        } // findBestMCMove
+
+        public static Node selectGoodNode(Node rootNode){
+            Node node = rootNode;
+            while (node.getChildren().size() != 0){
+                node = UCT.findBestUCTNode(node);
+            }
+
+            return node;
+        }
+
+        public static void expandNode(Node node){
+            ArrayList<PentagoMove> possibleMoves = node.getState().getLegalMoves();
+            for (PentagoMove move : possibleMoves){
+                PentagoBoardState newPbs = cloneBoard(node.getState().getPbs());
+                newPbs.processMove(move);
+                State newState = new State(newPbs);
+                Node newNode = new Node(newState);
+                newNode.setParent(node);
+                newNode.getState().setPlayerTurn(node.getState().getPlayerTurn());
+                node.getChildren().add(newNode);
+            }
+        } // expandNode
+
+        public static void backProp(Node node, int playerTurn){
+            Node tempNode = node;
+            while (node!= null){
+                tempNode.getState().incrementVisits();
+                if (tempNode.getState().getPlayerTurn() == playerTurn){
+                    tempNode.getState().addScore(WIN_SCORE);
+                }
+                tempNode = tempNode.getParent();
+            }
+        } // backProp
+
+        public static int simulatePlay(Node node){
+            Node tempNode = new Node(node);
+            State tempState = tempNode.getState();
+            int winOrLoss = checkGameResult(tempState.getPbs(), tempState.getPlayerTurn());
+            int turnNumber = tempState.getPbs().getTurnNumber();
+            boolean gameOutcome = tempState.getPbs().gameOver();
+
+            while(!gameOutcome){
+                PentagoMove move = (PentagoMove) tempState.getPbs().getRandomMove();
+                tempState.getPbs().processMove(move);
+                gameOutcome = tempState.getPbs().gameOver();
+            }
+
+            int gameResult = checkGameResult(tempState.getPbs(), tempState.getPlayerTurn());
+            return gameResult;
+        }
+
+
+    } // MonteCarlo
 
     ////////////////////////////////////// PRIVATE UCT CLASS //////////////////////////////////////
-    private class UCT {
-        public  double uctValue(int sims, double winRate, int nodeVisits){
+    static class UCT {
+        public static double uctValue(int sims, double winRate, int nodeVisits){
             if (nodeVisits == 0){
                 return Integer.MAX_VALUE;
             }
@@ -662,15 +790,15 @@ public class MyTools {
             return (winRate / (double) nodeVisits) * (Math.sqrt(2 * Math.log(sims)/ (double) nodeVisits));
         }
 
-        public Node findBestUCTNode(Node node){
+        public static Node findBestUCTNode(Node node){
             int parentVisit = node.getState().getVisits();
             return Collections.max(node.getChildren(), Comparator.comparing(c ->
                 uctValue(parentVisit, c.getState().getWinRate(), c.getState().getVisits())));
         }
-    }
+    } // UCT
 
     ////////////////////////////////////// PRIVATE TREE CLASS //////////////////////////////////////
-    private class Tree{
+    static class Tree{
         Node root;
 
 
@@ -689,10 +817,10 @@ public class MyTools {
         public void addChild(Node parent, Node child){
             parent.getChildren().add(child);
         }
-    }
+    } // Tree
 
     ////////////////////////////////////// PRIVATE NODE CLASS //////////////////////////////////////
-    private class Node {
+    static class Node {
         State state;
         Node parent;
         ArrayList<Node> children;
@@ -706,6 +834,18 @@ public class MyTools {
             this.state = state;
             this.parent = parent;
             this.children = children;
+        }
+
+        public Node(Node node){
+            this.children = new ArrayList<>();
+            this.state = new State(node.getState().getPbs());
+            if (node.getParent() != null){
+                this.parent = node.getParent();
+            }
+            ArrayList<Node> children = node.getChildren();
+            for (Node child : children){
+                this.children.add(new Node(child));
+            }
         }
 
         public State getState(){
@@ -746,7 +886,7 @@ public class MyTools {
     } // Node class
 
     ////////////////////////////////////// PRIVATE STATE CLASS //////////////////////////////////////
-    private class State {
+    static class State {
         private PentagoBoardState pbs;
         private int playerTurn;
         private int visits;
@@ -808,7 +948,7 @@ public class MyTools {
                 this.winRate += score;
             }
         }
-    }
+    } // State
 
 
 

@@ -4,6 +4,7 @@ import boardgame.Move;
 
 import pentago_twist.PentagoPlayer;
 import pentago_twist.PentagoBoardState;
+import student_player.MyTools.MonteCarlo;
 
 /** A player file submitted by a student. */
 public class StudentPlayer extends PentagoPlayer {
@@ -41,6 +42,12 @@ public class StudentPlayer extends PentagoPlayer {
             if (turnNumber > 2*MyTools.INCREASE_DEPTH){
                 MyTools.DEPTH = 4;
             }
+
+            /* For Monte Carlo Tree Search
+            MonteCarlo MC = new MonteCarlo();
+            myMove = MC.findBestMCMove(pbs, studentTurn);
+             */
+
 
             myMove = MyTools.findBestMove(pbs, studentTurn);
 
