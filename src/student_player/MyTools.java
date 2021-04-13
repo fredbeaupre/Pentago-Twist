@@ -650,5 +650,167 @@ public class MyTools {
     } // Tuple
 
 
+    ////////////////////////////////////// PRIVATE MONTECARLO CLASS //////////////////////////////////////
+
+    ////////////////////////////////////// PRIVATE UCT CLASS //////////////////////////////////////
+    private class UCT {
+        public  double uctValue(int sims, double winRate, int nodeVisits){
+            if (nodeVisits == 0){
+                return Integer.MAX_VALUE;
+            }
+
+            return (winRate / (double) nodeVisits) * (Math.sqrt(2 * Math.log(sims)/ (double) nodeVisits));
+        }
+
+        public Node findBestUCTNode(Node node){
+            int parentVisit = node.getState().getVisits();
+            return Collections.max(node.getChildren(), Comparator.comparing(c ->
+                uctValue(parentVisit, c.getState().getWinRate(), c.getState().getVisits())));
+        }
+    }
+
+    ////////////////////////////////////// PRIVATE TREE CLASS //////////////////////////////////////
+    private class Tree{
+        Node root;
+
+
+        public Tree(Node root){
+            this.root = root;
+        }
+
+        public Node getRoot() {
+            return root;
+        }
+
+        public void setRoot(Node root) {
+            this.root = root;
+        }
+
+        public void addChild(Node parent, Node child){
+            parent.getChildren().add(child);
+        }
+    }
+
+    ////////////////////////////////////// PRIVATE NODE CLASS //////////////////////////////////////
+    private class Node {
+        State state;
+        Node parent;
+        ArrayList<Node> children;
+
+        public Node(State state){
+            this.state = state;
+            children = new ArrayList<>();
+        }
+
+        public Node(State state, Node parent, ArrayList<Node> children){
+            this.state = state;
+            this.parent = parent;
+            this.children = children;
+        }
+
+        public State getState(){
+            return this.state;
+        }
+
+        public void setState(State state) {
+            this.state = state;
+        }
+
+        public Node getParent(){
+            return this.parent;
+        }
+
+        public void setParent(Node parent) {
+            this.parent = parent;
+        }
+
+        public ArrayList<Node> getChildren(){
+            return this.children;
+        }
+
+        public void setChildren(ArrayList<Node> children) {
+            this.children = children;
+        }
+
+        public Node getRandomChild(){
+            int numChildren = this.children.size();
+            int randomChild = (int) (Math.random() * numChildren);
+            return this.children.get(randomChild);
+        }
+
+        public Node getBestChild(){
+            return Collections.max(this.children, Comparator.comparing(c -> {
+                return c.getState().getVisits();
+            }));
+        }
+    } // Node class
+
+    ////////////////////////////////////// PRIVATE STATE CLASS //////////////////////////////////////
+    private class State {
+        private PentagoBoardState pbs;
+        private int playerTurn;
+        private int visits;
+        private double winRate;
+        private ArrayList<PentagoMove> legalMoves;
+
+
+        public State(PentagoBoardState pbs){
+            this.pbs = pbs;
+            this.legalMoves = pbs.getAllLegalMoves();
+        }
+
+        public PentagoBoardState getPbs(){
+            return this.pbs;
+        }
+
+        public void setPbs(PentagoBoardState pbs){
+            this.pbs = pbs;
+        }
+
+        public int getPlayerTurn(){
+            return this.playerTurn;
+        }
+
+        public void setPlayerTurn(int playerTurn){
+            this.playerTurn = playerTurn;
+        }
+
+        public int getVisits(){
+            return this.visits;
+        }
+
+        public void setVisits(int visits) {
+            this.visits = visits;
+        }
+
+        public double getWinRate() {
+            return winRate;
+        }
+
+        public void setWinRate(double winRate) {
+            this.winRate = winRate;
+        }
+
+        public ArrayList<PentagoMove> getLegalMoves(){
+            return this.legalMoves;
+        }
+
+        public void setLegalMoves(ArrayList<PentagoMove> legalMoves) {
+            this.legalMoves = legalMoves;
+        }
+
+        public void incrementVisits(){
+            this.visits++;
+        }
+
+        public void addScore(double score){
+            if (this.winRate != Integer.MIN_VALUE){
+                this.winRate += score;
+            }
+        }
+    }
+
+
+
 
 } // MyTools
