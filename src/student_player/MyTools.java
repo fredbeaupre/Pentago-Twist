@@ -510,7 +510,6 @@ public class MyTools {
         ArrayList<PentagoCoord> anchors = buildAnchors();
         PentagoMove move = null;
         PentagoCoord newCoord = null;
-        boolean anchorAvailable = false;
         Piece[][] board = pbs.getBoard();
         int checkStreaks = checkHorizontals(board, oppColor) + checkVerticals(board, oppColor) + checkDiagonals(pbs, oppColor);
 
@@ -531,22 +530,22 @@ public class MyTools {
                     break;
                 }
             }
-        } else if(turnNumber == 2 && color == Piece.BLACK){
-            for (PentagoCoord coord : anchors){
-                if (pbs.getPieceAt(coord) == Piece.EMPTY){
-                    anchorAvailable = true;
-                    move = new PentagoMove(coord, randomQuad, randomSwap, playerColor);
-                    break;
-                } else if(pbs.getPieceAt(coord) == color && !anchorAvailable){
-                    newCoord = centreExpansion(pbs,coord, playerColor, color);
-                    move = new PentagoMove(newCoord, randomQuad, randomSwap, playerColor);
-                    break;
-                }
+        } else{
+            if (checkStreaks > 0){
+                move = findBestMove(pbs, playerColor);
+            }else{
+                for (PentagoCoord coord : anchors){
+                    if(pbs.getPieceAt(coord) == color){
+                        newCoord = centreExpansion(pbs,coord, playerColor, color);
+                        move = new PentagoMove(newCoord, randomQuad, randomSwap, playerColor);
+                        break;
+                    } else if (pbs.getPieceAt(coord) == Piece.EMPTY){
+                        move = new PentagoMove(coord, randomQuad, randomSwap, playerColor);
+                        break;
+                    }
+                } // for-loop
             }
 
-        }
-        else{
-            findBestMove(pbs,playerColor);
         }
         return move;
     }
