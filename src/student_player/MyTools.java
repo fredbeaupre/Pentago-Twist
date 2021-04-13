@@ -14,7 +14,7 @@ public class MyTools {
     public static int QUINTUPLET_WEIGHT = 100000;
     public static int WIN_COST = 100000;
     public static final int SIM_TIME_LIMIT = 800;
-    public static final int MOVE_TIME_LIMIT = 1920;
+    public static final int MOVE_TIME_LIMIT = 1900;
     public static int DEPTH = 2;
     public static final int INCREASE_DEPTH = 10;
     private static final UnaryOperator<PentagoCoord> getNextHorizontal = c -> new PentagoCoord(c.getX(), c.getY()+1);
@@ -42,7 +42,7 @@ public class MyTools {
         long start = System.currentTimeMillis();
 
         ArrayList<PentagoMove> bestLegalMoves = removeObviousLosses(studentTurn, pbs);
-        // bestLegalMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
+        bestLegalMoves = monteCarloSimulations(pbs, studentTurn, bestLegalMoves);
 
         if (bestLegalMoves.size() == 1){
             return bestLegalMoves.get(0);
@@ -56,7 +56,7 @@ public class MyTools {
 
             PentagoBoardState cloneState = cloneBoard(pbs);
             cloneState.processMove(move);
-            double ab = negamax(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            double ab = alphaBeta(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE, isMaxPlayer);
             moveRankings.put(move, (double)ab);
         }
 
@@ -482,6 +482,17 @@ public class MyTools {
 
     //////////////////////////// "THEORY" METHODS ////////////////////////////
 
+    public static ArrayList<PentagoCoord> buildAnchors(){
+        ArrayList<PentagoCoord> strongestFour = new ArrayList<>();
+        strongestFour.add(topLeft);
+        strongestFour.add(topRight);
+        strongestFour.add(bottomLeft);
+        strongestFour.add(bottomRight);
+        Collections.shuffle(strongestFour);
+        return strongestFour;
+    }
+
+
     /**
      * Function to hardcode the agent's first three moves (only 2 if black) according to
      * our own opening "theory"
@@ -491,37 +502,85 @@ public class MyTools {
      * @return
      */
     public static PentagoMove firstThreeMoves(PentagoBoardState pbs, int playerColor, int turnNumber){
+        System.out.println("First three moves...");
         int randomQuad = getRandomNumberInRange(0,3);
         int randomSwap = getRandomNumberInRange(0,1);
         Piece color = playerColor == 0 ? Piece.WHITE : Piece.BLACK;
-        ArrayList<PentagoCoord> strongestFour = new ArrayList<>();
-        strongestFour.add(topLeft);
-        strongestFour.add(topRight);
-        strongestFour.add(bottomLeft);
-        strongestFour.add(bottomRight);
-        Collections.shuffle(strongestFour);
+        Piece oppColor = playerColor == 0 ? Piece.BLACK : Piece.WHITE;
+        ArrayList<PentagoCoord> anchors = buildAnchors();
         PentagoMove move = null;
         PentagoCoord newCoord = null;
+        boolean anchorAvailable = false;
+        Piece[][] board = pbs.getBoard();
+        int checkStreaks = checkHorizontals(board, oppColor) + checkVerticals(board, oppColor) + checkDiagonals(pbs, oppColor);
+
 
         if (turnNumber == 0 || turnNumber == 1){
-            for (PentagoCoord coord : strongestFour){
+            for (PentagoCoord coord : anchors){
                 if (pbs.getPieceAt(coord) == Piece.EMPTY){
                     move = new PentagoMove(coord, randomQuad, randomSwap, playerColor);
+                    break;
                 }
             }
         }
         else if (turnNumber == 2 && color == Piece.WHITE){
-            for (PentagoCoord coord: strongestFour){
+            for (PentagoCoord coord: anchors){
                 if (pbs.getPieceAt(coord) == color){
                     newCoord = centreExpansion(pbs,coord, playerColor, color);
                     move = new PentagoMove(newCoord, randomQuad, randomSwap, playerColor);
+                    break;
                 }
             }
-        } else{
+        } else if(turnNumber == 2 && color == Piece.BLACK){
+            for (PentagoCoord coord : anchors){
+                if (pbs.getPieceAt(coord) == Piece.EMPTY){
+                    anchorAvailable = true;
+                    move = new PentagoMove(coord, randomQuad, randomSwap, playerColor);
+                    break;
+                } else if(pbs.getPieceAt(coord) == color && !anchorAvailable){
+                    newCoord = centreExpansion(pbs,coord, playerColor, color);
+                    move = new PentagoMove(newCoord, randomQuad, randomSwap, playerColor);
+                    break;
+                }
+            }
+
+        }
+        else{
             findBestMove(pbs,playerColor);
         }
         return move;
     }
+
+    public static PentagoMove fourthAndFifthMoves(PentagoBoardState pbs, int playerColor, int turnNumber){
+        System.out.println("Fourth or fifth Moves");
+        int randomQuad = getRandomNumberInRange(0,3);
+        int randomSwap = getRandomNumberInRange(0,1);
+        Piece oppColor = playerColor == 0 ? Piece.BLACK : Piece.WHITE;
+        Piece color = playerColor == 0 ? Piece.WHITE : Piece.BLACK;
+        ArrayList<PentagoCoord> anchors = buildAnchors();
+        Piece[][] board = pbs.getBoard();
+        boolean anchorAvailable = false;
+        PentagoMove move = null;
+        PentagoCoord newCoord = null;
+        int checkStreaks = checkHorizontals(board, oppColor) + checkVerticals(board, oppColor) + checkDiagonals(pbs, oppColor);
+        if (checkStreaks > 0){
+            move = findBestMove(pbs, playerColor);
+        }else{
+            for (PentagoCoord coord : anchors){
+                if (pbs.getPieceAt(coord) == Piece.EMPTY){
+                    anchorAvailable = true;
+                    move = new PentagoMove(coord, randomQuad, randomSwap, playerColor);
+                    break;
+                } else if(pbs.getPieceAt(coord) == color && !anchorAvailable){
+                    newCoord = centreExpansion(pbs,coord, playerColor, color);
+                    move = new PentagoMove(newCoord, randomQuad, randomSwap, playerColor);
+                    break;
+                }
+            } // for-loop
+        } // if else
+
+        return move;
+    } // fourthAndFifthMoves
 
     /**
      * Hardcode the 3rd move so that the agent tries to make a move towards the center

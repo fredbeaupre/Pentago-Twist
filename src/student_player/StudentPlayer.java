@@ -32,6 +32,8 @@ public class StudentPlayer extends PentagoPlayer {
 
         if (turnNumber < 3){
             myMove = MyTools.firstThreeMoves(pbs, studentTurn, turnNumber);
+        } else if(turnNumber == 3 || turnNumber == 4){
+            myMove = MyTools.fourthAndFifthMoves(pbs, studentTurn, turnNumber);
         } else {
             MyTools.DEPTH = 2;
 
