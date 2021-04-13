@@ -56,7 +56,7 @@ public class MyTools {
 
             PentagoBoardState cloneState = cloneBoard(pbs);
             cloneState.processMove(move);
-            double ab = alphaBeta(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE, isMaxPlayer);
+            double ab = negamax(studentTurn, cloneState, DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE);
             moveRankings.put(move, (double)ab);
         }
 
