@@ -15,7 +15,7 @@ public class StudentPlayer extends PentagoPlayer {
      * associate you with your agent. The constructor should do nothing else.
      */
     public StudentPlayer() {
-        super("AlphaBeta");
+        super("260807622");
     }
 
     /**

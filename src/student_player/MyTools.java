@@ -14,7 +14,7 @@ public class MyTools {
     public static int QUINTUPLET_WEIGHT = 100000;
     public static int WIN_COST = 100000;
     public static final int SIM_TIME_LIMIT = 800;
-    public static final int MOVE_TIME_LIMIT = 1900;
+    public static final int MOVE_TIME_LIMIT = 1888;
     public static int DEPTH = 2;
     public static final int INCREASE_DEPTH = 10;
     private static final UnaryOperator<PentagoCoord> getNextHorizontal = c -> new PentagoCoord(c.getX(), c.getY()+1);
@@ -29,8 +29,9 @@ public class MyTools {
     //////////////////////////// SEARCH ALGORITHMS ////////////////////////////
 
     /**
-     * Function to find the best move using alpha-beta pruning or negamax, applied on an
-     * ArrayList of moves that were filtered from running some MonteCarlo simulations
+     * Function to find the best move using alpha-beta pruning or negamax, after running
+     * MonteCarlo simulations to filter the legalMoves ArrayList so that it contains good
+     * moves
      * @param pbs: board state
      * @param studentTurn: tells us if student has the white or black pieces
      * @return the best move
@@ -50,7 +51,6 @@ public class MyTools {
 
         for (PentagoMove move: bestLegalMoves){
             if (System.currentTimeMillis() - start > MOVE_TIME_LIMIT){
-                System.out.println("Taking too long...");
                 break;
             }
 
@@ -148,10 +148,11 @@ public class MyTools {
     } // negamax
 
     /**
-     *
-     * @param playerTurn
-     * @param pbs
-     * @return
+     * Function that takes all the legal moves for a given state and removes all those that
+     * lead to a direct loss
+     * @param playerTurn: (0 = white, 1 = black)
+     * @param pbs: board state
+     * @return list of moves with direct loss removed
      */
     public static ArrayList<PentagoMove> removeObviousLosses(int playerTurn, PentagoBoardState pbs){
         ArrayList<PentagoMove> legalMoves = pbs.getAllLegalMoves();
@@ -178,6 +179,14 @@ public class MyTools {
         return bestLegalMoves;
     } // removeObviousLosses
 
+    /**
+     * Monte Carlo simulations to assign UCT values to states;
+     * After simulation, we select topK states, sort them by score, and return to alphabeta
+     * @param pbs: board state
+     * @param studentTurn: (0 = white, 1 = black)
+     * @param moves: possible moves from pbs
+     * @return list of k good moves sorted by uct value
+     */
     public static ArrayList<PentagoMove> monteCarloSimulations(PentagoBoardState pbs, int studentTurn, ArrayList<PentagoMove> moves){
         long start = System.currentTimeMillis();
         HashMap<PentagoMove, Tuple> moveRankings = new HashMap<>();
@@ -267,6 +276,14 @@ public class MyTools {
     } // monteCarloSimulations
 
     //////////////////////////// SAMPLING METHODS ////////////////////////////
+
+    /**
+     * Sample best k moves from a HashMap
+     * @param map: HashMap of (Key, Value) -> (PentagoMove, UCT value of move)
+     * @param k: number of moves in the sample
+     * @param thresh: lower limit on move strength for it to be part of the sample
+     * @return best k moves
+     */
     private static ArrayList<PentagoMove> topKSample(HashMap<PentagoMove, Double> map, int k, double thresh){
         ArrayList<PentagoMove> topK = new ArrayList<>();
         Object[] moves = map.keySet().toArray(); // list of moves
@@ -482,6 +499,11 @@ public class MyTools {
 
     //////////////////////////// "THEORY" METHODS ////////////////////////////
 
+    /**
+     * Functions that create an ArrayList containing what we believe are the strongest
+     * squares on the board
+     * @return ^
+     */
     public static ArrayList<PentagoCoord> buildAnchors(){
         ArrayList<PentagoCoord> strongestFour = new ArrayList<>();
         strongestFour.add(topLeft);
@@ -502,7 +524,6 @@ public class MyTools {
      * @return
      */
     public static PentagoMove firstThreeMoves(PentagoBoardState pbs, int playerColor, int turnNumber){
-        System.out.println("First three moves...");
         int randomQuad = getRandomNumberInRange(0,3);
         int randomSwap = getRandomNumberInRange(0,1);
         Piece color = playerColor == 0 ? Piece.WHITE : Piece.BLACK;
@@ -550,8 +571,14 @@ public class MyTools {
         return move;
     }
 
+    /**
+     * Hardcodes function's fourth and fifth moves
+     * @param pbs
+     * @param playerColor
+     * @param turnNumber
+     * @return PentagoMove
+     */
     public static PentagoMove fourthAndFifthMoves(PentagoBoardState pbs, int playerColor, int turnNumber){
-        System.out.println("Fourth or fifth Moves");
         int randomQuad = getRandomNumberInRange(0,3);
         int randomSwap = getRandomNumberInRange(0,1);
         Piece oppColor = playerColor == 0 ? Piece.BLACK : Piece.WHITE;
